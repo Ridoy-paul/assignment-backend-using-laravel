@@ -11,7 +11,7 @@ use Illuminate\Validation\ValidationException;
 use Laravel\Socialite\Facades\Socialite;
 
 
-class Authcontroller extends Controller
+class AuthController extends Controller
 {
     public function login(Request $request)
     {
@@ -27,8 +27,8 @@ class Authcontroller extends Controller
         $credentials = $request->only('email', 'password');
         if (Auth::attempt($credentials)) {
             $user = Auth::user();
-            $accessToken = $user->createToken('YourApp')->accessToken;
-            $refreshToken = $user->createToken('YourApp')->refreshToken;
+            $accessToken = $user->createToken('authToken')->accessToken;
+            $refreshToken = $user->createToken('authToken')->refreshToken;
 
             return response()->json([
                 'access_token' => $accessToken,
@@ -38,6 +38,33 @@ class Authcontroller extends Controller
 
         return response()->json(['error' => 'Unauthorized'], 401);
     }
+
+
+    public function register(Request $request) {
+        
+        $request->validate([
+            'name' => 'required|string|max:255',
+            'email' => 'required|email|unique:users,email',
+            'password' => 'required|string|min:8|confirmed',
+        ]);
+
+        // Create the user
+        $user = User::create([
+            'name' => $request->name,
+            'email' => $request->email,
+            'password' => bcrypt($request->password),
+        ]);
+
+        $accessToken = $user->createToken('authToken')->accessToken;
+
+        return response()->json([
+            'message' => 'Registration successful!',
+            'user' => $user,
+            'access_token' => $accessToken,
+        ], 201);
+    }
+
+
 
     public function googleCallback() {
         try {
@@ -53,8 +80,8 @@ class Authcontroller extends Controller
             ]);
 
             // Generate token for the user
-            $accessToken = $user->createToken('YourApp')->accessToken;
-            $refreshToken = $user->createToken('YourApp')->refreshToken;
+            $accessToken = $user->createToken('authToken')->accessToken;
+            $refreshToken = $user->createToken('authToken')->refreshToken;
 
             return response()->json([
                 'access_token' => $accessToken,
